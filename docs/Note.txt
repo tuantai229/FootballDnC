@@ -1,3 +1,4 @@
+=== SETUP ===
 # Tạo môi trường mới tên là football với Python 3.10
 conda create -n football python=3.10
 
@@ -18,3 +19,24 @@ pip install ultralytics
 
 # Các thư viện khác có thể cần
 pip install scikit-learn tqdm pyyaml
+
+=== Script trích xuất từng frame từ video ===
+# Các tham số:
+--data-dir: Thư mục chứa dữ liệu gốc (mặc định: ./data)
+--output-dir: Thư mục để lưu frames (mặc định: ./data/frames)
+--interval: Khoảng cách giữa các frame được lưu (mặc định: 1, lưu tất cả frame)
+--resize-width và --resize-height: Kích thước để resize frame (mặc định: giữ nguyên kích thước)
+--single-video: Chỉ xử lý một video cụ thể (tùy chọn)
+
+# Thử nghiệm với một video
+python scripts/extract_frames.py --single-video data/football_train/Match_1951_1_0_subclip/Match_1951_1_0_subclip.mp4 --output-dir data/frames_test --interval 5
+python scripts/extract_frames.py --single-video data/football_train/Match_2022_3_0_subclip/Match_2022_3_0_subclip.mp4 --output-dir data/frames_test --interval 15 --resize-width 1280 --resize-height 400
+
+# Xử lý bộ dữ liệu train
+python scripts/extract_frames.py --splits train --output-dir data/frames --interval 10
+
+# Xử lý bộ dữ liệu test
+python scripts/extract_frames.py --splits test --output-dir data/frames --interval 10
+
+# Xử lý cả train và test cùng lúc
+python scripts/extract_frames.py --splits train test --output-dir data/frames --interval 10
