@@ -1,0 +1,20 @@
+# Tạo môi trường mới tên là football với Python 3.10
+conda create -n football python=3.10
+
+# Kích hoạt môi trường mới
+conda activate football
+
+# Kiểm tra xem đã chuyển sang môi trường mới chưa
+conda info --envs
+
+# Cài đặt các thư viện cơ bản
+pip install numpy pandas matplotlib opencv-python
+
+# Cài đặt PyTorch (cho Mac M2)
+pip install torch torchvision
+
+# Cài đặt Ultralytics (YOLO)
+pip install ultralytics
+
+# Các thư viện khác có thể cần
+pip install scikit-learn tqdm pyyaml

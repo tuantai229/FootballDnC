@@ -1,0 +1,39 @@
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+__pycache__/
+
+# Data files
+data/football_*/Match_*/*.mp4
+data/football_*/Match_*/*.json
+
+# System files
+.DS_Store
+*.pyc
+*.pyo
+
+# Model files
+*.pt
+*.pth
+*.onnx
+*.weights
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Logs
+logs/
+*.log
+
+# VS Code
+.vscode/
