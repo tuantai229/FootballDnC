@@ -16,6 +16,7 @@ data/football_*/Match_*/*.json
 data/frames/
 data/frames_*/
 data/frames_test/
+data/yolo/
 
 # System files
 .DS_Store

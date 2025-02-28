@@ -20,7 +20,7 @@ pip install ultralytics
 # Các thư viện khác có thể cần
 pip install scikit-learn tqdm pyyaml
 
-=== Script trích xuất từng frame từ video ===
+=== Script trích xuất từng frame từ video scripts/extract_frames.py ===
 # Các tham số:
 --data-dir: Thư mục chứa dữ liệu gốc (mặc định: ./data)
 --output-dir: Thư mục để lưu frames (mặc định: ./data/frames)
@@ -40,3 +40,26 @@ python scripts/extract_frames.py --splits test --output-dir data/frames --interv
 
 # Xử lý cả train và test cùng lúc
 python scripts/extract_frames.py --splits train test --output-dir data/frames --interval 10
+
+=== Chuyển đổi dữ liệu COCO sang YOLO scripts/coco2yolo.py ===
+# Chạy với tất cả tham số mặc định (classes là 'player' và 'ball')
+python scripts/coco2yolo.py --output-dir data/yolo
+
+# Chỉ xử lý một trận đấu cụ thể để kiểm tra
+python scripts/coco2yolo.py --single-match data/football_train/Match_1951_1_0_subclip --output-dir data/yolo_test
+
+# Chỉ giữ lại cầu thủ (không có bóng)
+python scripts/coco2yolo.py --classes player --output-dir data/yolo_player_only
+
+# Thay đổi tỷ lệ validation split
+python scripts/coco2yolo.py --val-split 0.3 --output-dir data/yolo_val30
+
+=== Kết hợp hoàn chỉnh 2 bước: trích xuất frames và chuyển đổi định dạng coco2yolo ===
+# Trích xuất tất cả frames với khoảng cách 10 frames và resize xuống kích thước nhỏ hơn
+python scripts/extract_frames.py --splits train test --output-dir data/frames --interval 10 --resize-width 1280 --resize-height 400
+
+# Chạy với tất cả tham số mặc định (classes là 'player' và 'ball')
+python scripts/coco2yolo.py --output-dir data/yolo
+
+# Script kiểm tra khớp dữ liệu
+python scripts/check_yolo_data.py
