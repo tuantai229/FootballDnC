@@ -17,6 +17,7 @@ data/frames/
 data/frames_*/
 data/frames_test/
 data/yolo/
+dataset/
 
 # System files
 .DS_Store

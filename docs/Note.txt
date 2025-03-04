@@ -14,52 +14,35 @@ pip install numpy pandas matplotlib opencv-python
 # Cài đặt PyTorch (cho Mac M2)
 pip install torch torchvision
 
-# Cài đặt Ultralytics (YOLO)
-pip install ultralytics
+# Cài đặt Ultralytics (YOLO) YOLOv11
+pip install -U ultralytics
 
 # Các thư viện khác có thể cần
 pip install scikit-learn tqdm pyyaml
 
-=== Script trích xuất từng frame từ video scripts/extract_frames.py ===
+# Cài đặt ipykernel vào môi trường
+conda install ipykernel
+
+# Đăng ký môi trường với Jupyter
+python -m ipykernel install --user --name=football
+
+=== Chuẩn bị dữ liệu YOLO `scripts/prepare_yolo_dataset.py` ===
 # Các tham số:
 --data-dir: Thư mục chứa dữ liệu gốc (mặc định: ./data)
---output-dir: Thư mục để lưu frames (mặc định: ./data/frames)
---interval: Khoảng cách giữa các frame được lưu (mặc định: 1, lưu tất cả frame)
---resize-width và --resize-height: Kích thước để resize frame (mặc định: giữ nguyên kích thước)
---single-video: Chỉ xử lý một video cụ thể (tùy chọn)
+--output-dir: Thư mục để lưu dataset chuẩn YOLO (mặc định: ./dataset)
+--frame-interval: Khoảng cách giữa các frame được trích xuất (mặc định: 10)
+--val-split: Tỷ lệ dữ liệu dành cho validation (mặc định: 0.2)
+--splits: Danh sách các split cần xử lý (mặc định: ['train'])
+--single-match: Chỉ xử lý một thư mục match cụ thể (tùy chọn)
 
-# Thử nghiệm với một video
-python scripts/extract_frames.py --single-video data/football_train/Match_1951_1_0_subclip/Match_1951_1_0_subclip.mp4 --output-dir data/frames_test --interval 5
-python scripts/extract_frames.py --single-video data/football_train/Match_2022_3_0_subclip/Match_2022_3_0_subclip.mp4 --output-dir data/frames_test --interval 15 --resize-width 1280 --resize-height 400
+# Thử nghiệm với một match
+python scripts/prepare_yolo_dataset.py --single-match football_train/Match_1824_1_0_subclip_3 --frame-interval 10 --val-split 0.2
 
-# Xử lý bộ dữ liệu train
-python scripts/extract_frames.py --splits train --output-dir data/frames --interval 10
+# Xử lý tất cả matches trong tập train
+python scripts/prepare_yolo_dataset.py --splits train --frame-interval 10 --val-split 0.2
 
-# Xử lý bộ dữ liệu test
-python scripts/extract_frames.py --splits test --output-dir data/frames --interval 10
+# Xử lý tất cả matches trong tập test
+python scripts/prepare_yolo_dataset.py --splits test --frame-interval 10 --val-split 0.0
 
-# Xử lý cả train và test cùng lúc
-python scripts/extract_frames.py --splits train test --output-dir data/frames --interval 10
-
-=== Chuyển đổi dữ liệu COCO sang YOLO scripts/coco2yolo.py ===
-# Chạy với tất cả tham số mặc định (classes là 'player' và 'ball')
-python scripts/coco2yolo.py --output-dir data/yolo
-
-# Chỉ xử lý một trận đấu cụ thể để kiểm tra
-python scripts/coco2yolo.py --single-match data/football_train/Match_1951_1_0_subclip --output-dir data/yolo_test
-
-# Chỉ giữ lại cầu thủ (không có bóng)
-python scripts/coco2yolo.py --classes player --output-dir data/yolo_player_only
-
-# Thay đổi tỷ lệ validation split
-python scripts/coco2yolo.py --val-split 0.3 --output-dir data/yolo_val30
-
-=== Kết hợp hoàn chỉnh 2 bước: trích xuất frames và chuyển đổi định dạng coco2yolo ===
-# Trích xuất tất cả frames với khoảng cách 10 frames và resize xuống kích thước nhỏ hơn
-python scripts/extract_frames.py --splits train test --output-dir data/frames --interval 10 --resize-width 1280 --resize-height 400
-
-# Chạy với tất cả tham số mặc định (classes là 'player' và 'ball')
-python scripts/coco2yolo.py --output-dir data/yolo
-
-# Script kiểm tra khớp dữ liệu
-python scripts/check_yolo_data.py
+# Xử lý cả train và test
+python scripts/prepare_yolo_dataset.py --splits train test --frame-interval 10 --val-split 0.2
