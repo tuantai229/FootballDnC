@@ -13,11 +13,11 @@ data/football_*/Match_*/*.mp4
 data/football_*/Match_*/*.json
 
 # Extracted frames and dataset files
-data/frames/
-data/frames_*/
-data/frames_test/
-data/yolo/
+data/
 dataset/
+dataset_test/
+
+models/
 
 # System files
 .DS_Store

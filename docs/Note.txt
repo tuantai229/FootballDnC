@@ -46,3 +46,24 @@ python scripts/prepare_yolo_dataset.py --splits test --frame-interval 10 --val-s
 
 # Xử lý cả train và test
 python scripts/prepare_yolo_dataset.py --splits train test --frame-interval 10 --val-split 0.2
+
+=> Chạy script chuẩn cho dự án:
+
+# Chuẩn bị dữ liệu train và validation
+python scripts/prepare_yolo_dataset.py --splits train --frame-interval 10 --val-split 0.2
+
+# Chuẩn bị dữ liệu test (không chia validation)
+python scripts/prepare_yolo_dataset.py --splits test --frame-interval 10 --val-split 0 --output-dir ./dataset_test
+
+
+=== Train detection ===
+
+# Train basic
+python src/detection/train_basic.py
+
+# Train improve
+python src/detection/train_improve1.py
+python src/detection/train_improve2.py
+
+# Evalute model
+python src/detection/evalute_model.py
