@@ -27,34 +27,33 @@ conda install ipykernel
 python -m ipykernel install --user --name=football
 
 === Chuẩn bị dữ liệu YOLO `scripts/prepare_yolo_dataset.py` ===
-# Các tham số:
---data-dir: Thư mục chứa dữ liệu gốc (mặc định: ./data)
---output-dir: Thư mục để lưu dataset chuẩn YOLO (mặc định: ./dataset)
---frame-interval: Khoảng cách giữa các frame được trích xuất (mặc định: 10)
---val-split: Tỷ lệ dữ liệu dành cho validation (mặc định: 0.2)
---splits: Danh sách các split cần xử lý (mặc định: ['train'])
---single-match: Chỉ xử lý một thư mục match cụ thể (tùy chọn)
+Tham số:
+  --data-dir TEXT          Thư mục gốc chứa dữ liệu (mặc định: './data')
+  --output-dir TEXT        Thư mục đầu ra cho dataset YOLO (mặc định: './dataset')
+  --splits TEXT            Loại split cần xử lý: 'train', 'test' hoặc cả hai (mặc định: ['train'])
+  --frame-interval INT     Chỉ lưu 1 frame sau mỗi N frames, khoảng cách càng lớn dataset càng nhỏ
+                           (mặc định: 10)
+  --val-split FLOAT        Tỷ lệ chia tập validation, 0.2 = 20% dữ liệu dành cho validation
+                           (mặc định: 0.2)
+  --resize-width INT       Chiều rộng để resize frame, nếu muốn giữ tỷ lệ gốc, chỉ định
+                           một trong hai tham số này và để tham số còn lại là None
+                           (mặc định: None - giữ nguyên kích thước)
+  --resize-height INT      Chiều cao để resize frame
+                           (mặc định: None - giữ nguyên kích thước)
 
-# Thử nghiệm với một match
-python scripts/prepare_yolo_dataset.py --single-match football_train/Match_1824_1_0_subclip_3 --frame-interval 10 --val-split 0.2
+Các câu lệnh ví dụ
+# Trích xuất 10% frames từ videos trong tập train, chia thành 80% train và 20% validation
+python scripts/prepare_yolo_dataset.py --splits train --frame-interval 10 --val-split 0.2 --output-dir ./dataset
 
-# Xử lý tất cả matches trong tập train
-python scripts/prepare_yolo_dataset.py --splits train --frame-interval 10 --val-split 0.2
+# Resize về 1280x400 (giữ tỷ lệ gần đúng với 3840x1200)
+python scripts/prepare_yolo_dataset.py --splits train --frame-interval 10 --val-split 0.2 --output-dir ./dataset --resize-width 1280 --resize-height 400
 
-# Xử lý tất cả matches trong tập test
-python scripts/prepare_yolo_dataset.py --splits test --frame-interval 10 --val-split 0.0
+# Lấy mỗi frame thứ 30, tạo dataset nhỏ hơn
+python scripts/prepare_yolo_dataset.py --splits train --frame-interval 30 --val-split 0.2 --output-dir ./dataset_small
 
-# Xử lý cả train và test
-python scripts/prepare_yolo_dataset.py --splits train test --frame-interval 10 --val-split 0.2
-
-=> Chạy script chuẩn cho dự án:
-
-# Chuẩn bị dữ liệu train và validation
-python scripts/prepare_yolo_dataset.py --splits train --frame-interval 10 --val-split 0.2
-
-# Chuẩn bị dữ liệu test (không chia validation)
+==> Chạy cho dự án
+python scripts/prepare_yolo_dataset.py --splits train --frame-interval 10 --val-split 0.2 --output-dir ./dataset
 python scripts/prepare_yolo_dataset.py --splits test --frame-interval 10 --val-split 0 --output-dir ./dataset_test
-
 
 === Train detection ===
 
