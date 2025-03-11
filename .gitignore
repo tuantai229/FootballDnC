@@ -16,6 +16,7 @@ data/football_*/Match_*/*.json
 data/
 dataset/
 dataset_test/
+classification_dataset/
 
 models/
 

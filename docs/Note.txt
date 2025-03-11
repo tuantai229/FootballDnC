@@ -66,3 +66,11 @@ python src/detection/train_improve2.py
 
 # Evalute model
 python src/detection/evalute_model.py
+
+=== Train detection trên Kaggle ===
+Sử dụng `src/detection/train_experiment.py` lấy kết quả phù hợp download về `models/exp_custom_model`
+
+
+=== Chuẩn bị dữ liệu cho Image Classification `scripts/prepare_yolo_dataset.py` ===
+python scripts/prepare_classification_dataset.py --data-dir ./data  --frame-dir ./dataset/train/images --output-dir ./classification_dataset --min-samples 20
+
