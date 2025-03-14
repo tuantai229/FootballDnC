@@ -74,3 +74,16 @@ Sử dụng `src/detection/train_experiment.py` lấy kết quả phù hợp dow
 === Chuẩn bị dữ liệu cho Image Classification `scripts/prepare_yolo_dataset.py` ===
 python scripts/prepare_classification_dataset.py --data-dir ./data  --frame-dir ./dataset/train/images --output-dir ./classification_dataset --min-samples 20
 
+
+=== Train Classification ===
+# Kiểm thử dataset
+python src/classification/datasets.py
+
+# Kiểm thử model
+python src/classification/models.py
+
+# Tiến hành train
+python src/classification/train.py
+
+# Tiến hành đánh giá
+python src/classification/evaluate.py --model_path ./models/classification/best.pt
