@@ -4,6 +4,10 @@
 """
 Script để chuẩn bị dataset cho bài toán phân loại số áo cầu thủ.
 Trích xuất crop ảnh cầu thủ từ các frames và annotation.
+Phân loại số áo theo đề bài:
+- Class 0: Dành cho những cầu thủ không nhìn rõ được số áo
+- Class 1-10: Dành cho các số từ 1 đến 10
+- Class 11: Dành cho các số từ 11 trở lên
 """
 
 import os
@@ -18,19 +22,20 @@ import numpy as np
 from collections import Counter, defaultdict
 import matplotlib.pyplot as plt
 
-def extract_player_crops(data_dir, annotation_dir, frame_dir, output_dir, 
-                         min_samples=20, augment=False, resize_dim=None):
+def extract_player_crops(data_dir, frame_dir, output_dir, 
+                         min_samples=20, augment=False, resize_dim=None, 
+                         treat_partially_as_invisible=True):
     """
     Trích xuất crop ảnh cầu thủ từ các frames và annotation
     
     Args:
         data_dir (str): Thư mục gốc chứa dữ liệu
-        annotation_dir (str): Thư mục chứa file annotation
         frame_dir (str): Thư mục chứa frames đã trích xuất
         output_dir (str): Thư mục đầu ra cho dataset
         min_samples (int): Số lượng mẫu tối thiểu cho mỗi class
         augment (bool): Có áp dụng data augmentation không
         resize_dim (tuple): Kích thước để resize ảnh crop (width, height)
+        treat_partially_as_invisible (bool): Có đối xử partially_visible như invisible không
     """
     os.makedirs(output_dir, exist_ok=True)
     
@@ -44,9 +49,12 @@ def extract_player_crops(data_dir, annotation_dir, frame_dir, output_dir,
     jersey_images = defaultdict(list)
     # Dict để lưu số mẫu theo team_jersey_color
     team_color_counts = defaultdict(int)
+    # Dict để lưu số mẫu theo visibility status
+    visibility_counts = defaultdict(int)
     
     # Đường dẫn tới thư mục dataset
     print(f"Đang xử lý dữ liệu từ: {data_dir}")
+    print(f"Đang lấy frames từ: {frame_dir}")
     
     # Duyệt qua tất cả các file annotation
     for split in ["train", "test"]:
@@ -61,13 +69,13 @@ def extract_player_crops(data_dir, annotation_dir, frame_dir, output_dir,
         
         # Lấy danh sách các thư mục match
         match_dirs = [d for d in os.listdir(split_dir) 
-                     if os.path.isdir(os.path.join(split_dir, d)) and not d.startswith('.')]
+                    if os.path.isdir(os.path.join(split_dir, d)) and not d.startswith('.')]
         
         # Xử lý từng match
         for match_dir in match_dirs:
             print(f"\nXử lý match: {match_dir}")
             
-            # Đường dẫn đến file annotation và video
+            # Đường dẫn đến file annotation
             anno_path = os.path.join(split_dir, match_dir, f"{match_dir}.json")
             
             # Kiểm tra file annotation có tồn tại không
@@ -88,7 +96,6 @@ def extract_player_crops(data_dir, annotation_dir, frame_dir, output_dir,
                 # Frame ID thường được lưu trong "file_name" dưới dạng "frame_XXXXXX.PNG"
                 frame_id = int(img['file_name'].split('_')[-1].split('.')[0])
                 image_map[img['id']] = frame_id
-                filename_map[frame_id] = img['file_name']
             
             # Tìm tất cả các frames đã trích xuất cho match này
             match_frames = []
@@ -103,36 +110,36 @@ def extract_player_crops(data_dir, annotation_dir, frame_dir, output_dir,
                 
             print(f"  Tìm thấy {len(match_frames)} frames")
             
-            # Lập danh sách các annotation của cầu thủ (category_id=4) có số áo
+            # Lập danh sách các annotation của cầu thủ (category_id=4)
             player_annotations = []
             for ann in annotations['annotations']:
                 if ann['category_id'] == 4:  # Cầu thủ
+                    # Lấy thông tin về số áo
+                    jersey_number = "unknown"
                     if 'attributes' in ann and 'jersey_number' in ann['attributes']:
                         jersey_number = ann['attributes']['jersey_number']
-                        if jersey_number == "invisible" or not jersey_number.isdigit():
-                            jersey_number = "0"  # Gán class 0 cho những số áo không nhìn thấy
-                        
-                        # Lưu thêm thông tin về màu áo
-                        team_color = "unknown"
-                        if 'team_jersey_color' in ann['attributes']:
-                            team_color = ann['attributes']['team_jersey_color']
-                        
-                        # Lưu thông tin về độ rõ của số áo
-                        number_visible = "invisible"
-                        if 'number_visible' in ann['attributes']:
-                            number_visible = ann['attributes']['number_visible']
-                        
-                        # Thêm vào danh sách
-                        player_annotations.append({
-                            'image_id': ann['image_id'],
-                            'frame_id': image_map[ann['image_id']],
-                            'bbox': ann['bbox'],
-                            'jersey_number': jersey_number,
-                            'team_color': team_color,
-                            'number_visible': number_visible
-                        })
+                    
+                    # Lấy thông tin về độ rõ của số áo
+                    number_visible = "unknown"
+                    if 'attributes' in ann and 'number_visible' in ann['attributes']:
+                        number_visible = ann['attributes']['number_visible']
+                    
+                    # Lấy thông tin về màu áo
+                    team_color = "unknown"
+                    if 'attributes' in ann and 'team_jersey_color' in ann['attributes']:
+                        team_color = ann['attributes']['team_jersey_color']
+                    
+                    # Thêm vào danh sách
+                    player_annotations.append({
+                        'image_id': ann['image_id'],
+                        'frame_id': image_map[ann['image_id']],
+                        'bbox': ann['bbox'],
+                        'jersey_number': jersey_number,
+                        'number_visible': number_visible,
+                        'team_color': team_color
+                    })
             
-            print(f"  Tìm thấy {len(player_annotations)} annotations cầu thủ có thông tin số áo")
+            print(f"  Tìm thấy {len(player_annotations)} annotations cầu thủ")
             
             # Tạo ánh xạ từ frame_id sang đường dẫn frame
             frame_path_map = {frame_id: path for frame_id, path in match_frames}
@@ -175,78 +182,84 @@ def extract_player_crops(data_dir, annotation_dir, frame_dir, output_dir,
                 if resize_dim is not None:
                     crop = cv2.resize(crop, resize_dim)
                 
-                # Lấy số áo và màu áo
+                # Lấy số áo và tình trạng hiển thị
                 jersey_number = ann['jersey_number']
-                team_color = ann['team_color']
                 number_visible = ann['number_visible']
+                team_color = ann['team_color']
                 
-                # Chỉ lưu những ảnh có số áo rõ ràng
-                if number_visible == "visible" or jersey_number == "0":
-                    # Xác định class name theo đề bài
-                    class_name = jersey_number
-                    if jersey_number.isdigit():
-                        jersey_num = int(jersey_number)
-                        if jersey_num == 0:
-                            class_name = "0"  # Không nhìn thấy số áo
-                        elif 1 <= jersey_num <= 10:
-                            class_name = str(jersey_num)  # Số từ 1-10 giữ nguyên
-                        else:
-                            class_name = "11"  # Số từ 11 trở lên gộp vào class 11
+                # Cập nhật thống kê trạng thái hiển thị
+                visibility_counts[number_visible] += 1
+                
+                # Xác định class name theo đề bài
+                if number_visible == "invisible" or (treat_partially_as_invisible and number_visible == "partially_visible"):
+                    class_name = "0"  # Class 0 cho những cầu thủ không nhìn rõ số áo
+                elif jersey_number.isdigit():
+                    jersey_num = int(jersey_number)
+                    if 1 <= jersey_num <= 10:
+                        class_name = str(jersey_num)  # Số từ 1-10 giữ nguyên
+                    else:
+                        class_name = "11"  # Số từ 11 trở lên gộp vào class 11
+                else:
+                    class_name = "0"  # Trường hợp jersey_number không phải số
+                
+                # Tạo thư mục cho class nếu chưa có
+                class_dir = os.path.join(temp_dir, class_name)
+                os.makedirs(class_dir, exist_ok=True)
+                
+                # Tạo tên file cho crop với thông tin thêm về số áo gốc
+                crop_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_num{jersey_number}_vis{number_visible}.jpg"
+                crop_path = os.path.join(class_dir, crop_name)
+                
+                # Lưu crop
+                cv2.imwrite(crop_path, crop)
+                
+                # Cập nhật thống kê
+                jersey_counts[class_name] += 1
+                jersey_images[class_name].append(crop_path)
+                team_color_counts[team_color] += 1
+                
+                # Thực hiện data augmentation nếu cần
+                if augment and class_name != "0":  # Không augment Class 0
+                    # Lật ngang
+                    if random.random() < 0.5:
+                        flip_crop = cv2.flip(crop, 1)
+                        flip_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_num{jersey_number}_flip.jpg"
+                        flip_path = os.path.join(class_dir, flip_name)
+                        cv2.imwrite(flip_path, flip_crop)
+                        jersey_counts[class_name] += 1
+                        jersey_images[class_name].append(flip_path)
                     
-                    # Tạo thư mục cho class nếu chưa có
-                    class_dir = os.path.join(temp_dir, class_name)
-                    os.makedirs(class_dir, exist_ok=True)
+                    # Xoay nhẹ
+                    if random.random() < 0.3:
+                        angle = random.uniform(-15, 15)
+                        h, w = crop.shape[:2]
+                        center = (w // 2, h // 2)
+                        M = cv2.getRotationMatrix2D(center, angle, 1.0)
+                        rotated_crop = cv2.warpAffine(crop, M, (w, h))
+                        rot_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_num{jersey_number}_rot.jpg"
+                        rot_path = os.path.join(class_dir, rot_name)
+                        cv2.imwrite(rot_path, rotated_crop)
+                        jersey_counts[class_name] += 1
+                        jersey_images[class_name].append(rot_path)
                     
-                    # Tạo tên file cho crop
-                    crop_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}.jpg"
-                    crop_path = os.path.join(class_dir, crop_name)
-                    
-                    # Lưu crop
-                    cv2.imwrite(crop_path, crop)
-                    
-                    # Cập nhật thống kê
-                    jersey_counts[class_name] += 1
-                    jersey_images[class_name].append(crop_path)
-                    team_color_counts[team_color] += 1
-                    
-                    # Thực hiện data augmentation nếu cần
-                    if augment and int(class_name) > 0:  # Chỉ augment cho các lớp số áo thật
-                        # Lật ngang
-                        if random.random() < 0.5:
-                            flip_crop = cv2.flip(crop, 1)
-                            flip_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_flip.jpg"
-                            flip_path = os.path.join(class_dir, flip_name)
-                            cv2.imwrite(flip_path, flip_crop)
-                            jersey_counts[class_name] += 1
-                            jersey_images[class_name].append(flip_path)
-                        
-                        # Xoay nhẹ
-                        if random.random() < 0.3:
-                            angle = random.uniform(-15, 15)
-                            h, w = crop.shape[:2]
-                            center = (w // 2, h // 2)
-                            M = cv2.getRotationMatrix2D(center, angle, 1.0)
-                            rotated_crop = cv2.warpAffine(crop, M, (w, h))
-                            rot_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_rot.jpg"
-                            rot_path = os.path.join(class_dir, rot_name)
-                            cv2.imwrite(rot_path, rotated_crop)
-                            jersey_counts[class_name] += 1
-                            jersey_images[class_name].append(rot_path)
-                        
-                        # Điều chỉnh độ sáng
-                        if random.random() < 0.3:
-                            brightness = 0.5 + random.random() * 1.0  # 0.5 to 1.5
-                            bright_crop = cv2.convertScaleAbs(crop, alpha=brightness, beta=0)
-                            bright_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_bright.jpg"
-                            bright_path = os.path.join(class_dir, bright_name)
-                            cv2.imwrite(bright_path, bright_crop)
-                            jersey_counts[class_name] += 1
-                            jersey_images[class_name].append(bright_path)
+                    # Điều chỉnh độ sáng
+                    if random.random() < 0.3:
+                        brightness = 0.5 + random.random() * 1.0  # 0.5 to 1.5
+                        bright_crop = cv2.convertScaleAbs(crop, alpha=brightness, beta=0)
+                        bright_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_num{jersey_number}_bright.jpg"
+                        bright_path = os.path.join(class_dir, bright_name)
+                        cv2.imwrite(bright_path, bright_crop)
+                        jersey_counts[class_name] += 1
+                        jersey_images[class_name].append(bright_path)
     
     # Hiển thị thống kê
-    print("\n=== THỐNG KÊ SỐ LƯỢNG MẪU ===")
+    print("\n=== THỐNG KÊ SỐ LƯỢNG MẪU THEO LỚP ===")
     for jersey_num in sorted(jersey_counts.keys(), key=lambda x: int(x)):
-        print(f"Số áo {jersey_num}: {jersey_counts[jersey_num]} mẫu")
+        print(f"Class {jersey_num}: {jersey_counts[jersey_num]} mẫu")
+    
+    print("\n=== THỐNG KÊ TRẠNG THÁI HIỂN THỊ ===")
+    for status, count in visibility_counts.items():
+        print(f"Trạng thái {status}: {count} mẫu")
     
     print("\n=== THỐNG KÊ MÀU ÁO ===")
     for color, count in team_color_counts.items():
@@ -258,10 +271,10 @@ def extract_player_crops(data_dir, annotation_dir, frame_dir, output_dir,
     
     plt.figure(figsize=(12, 6))
     plt.bar(sorted_jerseys, counts)
-    plt.xlabel('Số áo')
+    plt.xlabel('Lớp')
     plt.ylabel('Số lượng mẫu')
-    plt.title('Phân bố số lượng mẫu theo số áo')
-    plt.savefig(os.path.join(output_dir, 'jersey_distribution.png'))
+    plt.title('Phân bố số lượng mẫu theo lớp')
+    plt.savefig(os.path.join(output_dir, 'class_distribution.png'))
     
     # Tạo thư mục train và val
     train_dir = os.path.join(output_dir, 'train')
@@ -310,7 +323,7 @@ def extract_player_crops(data_dir, annotation_dir, frame_dir, output_dir,
     # Xóa thư mục tạm
     shutil.rmtree(temp_dir)
     
-    # Tạo các file classes.txt và đếm số lượng ảnh trong mỗi split
+    # Tạo các file classes.txt
     classes = [c for c in sorted_jerseys if len(os.listdir(os.path.join(train_dir, c))) > 0]
     
     with open(os.path.join(output_dir, 'classes.txt'), 'w') as f:
@@ -339,7 +352,7 @@ def extract_player_crops(data_dir, annotation_dir, frame_dir, output_dir,
     if len(classes) > 5:
         print("│   ├── ...")
     print("├── classes.txt")
-    print("└── jersey_distribution.png")
+    print("└── class_distribution.png")
 
 def main():
     parser = argparse.ArgumentParser(description='Chuẩn bị dataset cho phân loại số áo cầu thủ')
@@ -357,6 +370,8 @@ def main():
                         help='Chiều rộng để resize crop (mặc định: giữ nguyên kích thước)')
     parser.add_argument('--resize-height', type=int, default=None,
                         help='Chiều cao để resize crop (mặc định: giữ nguyên kích thước)')
+    parser.add_argument('--treat-partially-as-visible', action='store_true',
+                        help='Đối xử partially_visible như visible (không phân vào class 0)')
     
     args = parser.parse_args()
     
@@ -368,12 +383,12 @@ def main():
     # Trích xuất crops
     extract_player_crops(
         data_dir=args.data_dir,
-        annotation_dir=args.data_dir,
         frame_dir=args.frame_dir,
         output_dir=args.output_dir,
         min_samples=args.min_samples,
         augment=args.augment,
-        resize_dim=resize_dim
+        resize_dim=resize_dim,
+        treat_partially_as_invisible=not args.treat_partially_as_visible  # Đảo ngược logic
     )
 
 if __name__ == "__main__":
