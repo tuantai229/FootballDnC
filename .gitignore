@@ -19,6 +19,7 @@ dataset_test/
 classification_dataset/
 
 models/
+results/
 
 # System files
 .DS_Store
