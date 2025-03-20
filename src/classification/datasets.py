@@ -20,7 +20,7 @@ class JerseyNumberDataset(Dataset):
             - class1/
                 ...
     """
-    def __init__(self, root, train=True, transform=None):
+    def __init__(self, root, train=True, transform=None, return_color_label=False):
         """
         Khởi tạo dataset
         
@@ -28,9 +28,11 @@ class JerseyNumberDataset(Dataset):
             root (str): Thư mục gốc chứa dataset
             train (bool): Nếu True, sử dụng tập train, ngược lại sử dụng tập val
             transform (callable, optional): Biến đổi áp dụng lên ảnh
+            return_color_label (bool): Nếu True, trả về cả nhãn màu áo
         """
         self.root = root
         self.train = train
+        self.return_color_label = return_color_label
         
         # Xác định transform
         if transform is None:
@@ -78,7 +80,7 @@ class JerseyNumberDataset(Dataset):
             idx (int): Chỉ số của mẫu
             
         Returns:
-            tuple: (ảnh, nhãn) với ảnh đã qua transform
+            tuple: (ảnh, nhãn) hoặc (ảnh, nhãn, nhãn_màu) nếu return_color_label=True
         """
         # Đọc ảnh từ đường dẫn
         img_path = self.images[idx]
@@ -88,23 +90,44 @@ class JerseyNumberDataset(Dataset):
         image = self.transform(image)
         label = self.labels[idx]
         
-        return image, label
+        # Nếu không cần trả về nhãn màu áo
+        if not self.return_color_label:
+            return image, label
+        
+        # Trích xuất thông tin màu áo từ tên file
+        filename = os.path.basename(img_path)
+        parts = filename.split('_')
+        
+        # Mặc định là white (0)
+        color_label = 0
+        
+        # Tìm phần có thông tin màu áo
+        for part in parts:
+            if part.startswith("color"):
+                color_value = part[5:].split('.')[0]  # Cắt "color" và loại bỏ phần mở rộng file để lấy giá trị
+                if color_value == "black":
+                    color_label = 1
+                break
+        
+        # Trả về cả nhãn số áo và nhãn màu áo
+        return image, label, color_label
 
 
 # Test code
 if __name__ == '__main__':
     # Test dataset
-    train_dataset = JerseyNumberDataset(root="classification_dataset", train=True)
-    val_dataset = JerseyNumberDataset(root="classification_dataset", train=False)
+    train_dataset = JerseyNumberDataset(root="classification_dataset", train=True, return_color_label=True)
+    val_dataset = JerseyNumberDataset(root="classification_dataset", train=False, return_color_label=True)
 
     print(f"Số lượng ảnh train: {len(train_dataset)}")
     print(f"Số lượng ảnh val: {len(val_dataset)}")
     print(f"Các lớp: {train_dataset.classes}")
 
     # Kiểm tra một mẫu
-    image, label = train_dataset[0]
+    image, label, color_label = train_dataset[0]
     print(f"Kích thước ảnh: {image.shape}")
-    print(f"Nhãn: {label} ({train_dataset.classes[label]})")
+    print(f"Nhãn số áo: {label} ({train_dataset.classes[label]})")
+    print(f"Nhãn màu áo: {color_label} ({'black' if color_label == 1 else 'white'})")
 
     # Test dataloader
     from torch.utils.data import DataLoader
@@ -116,7 +139,14 @@ if __name__ == '__main__':
     )
 
     # In ra kích thước batch đầu tiên
-    for images, labels in train_loader:
-        print(f"Batch shape: {images.shape}")
-        print(f"Labels shape: {labels.shape}")
+    for data in train_loader:
+        if len(data) == 3:
+            images, labels, color_labels = data
+            print(f"Batch shape: {images.shape}")
+            print(f"Labels shape: {labels.shape}")
+            print(f"Color labels shape: {color_labels.shape}")
+        else:
+            images, labels = data
+            print(f"Batch shape: {images.shape}")
+            print(f"Labels shape: {labels.shape}")
         break

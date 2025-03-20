@@ -206,8 +206,8 @@ def extract_player_crops(data_dir, frame_dir, output_dir,
                 class_dir = os.path.join(temp_dir, class_name)
                 os.makedirs(class_dir, exist_ok=True)
                 
-                # Tạo tên file cho crop với thông tin thêm về số áo gốc
-                crop_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_num{jersey_number}_vis{number_visible}.jpg"
+                # Tạo tên file cho crop với thông tin thêm về số áo gốc và màu áo
+                crop_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_num{jersey_number}_vis{number_visible}_color{team_color}.jpg"
                 crop_path = os.path.join(class_dir, crop_name)
                 
                 # Lưu crop
@@ -223,7 +223,7 @@ def extract_player_crops(data_dir, frame_dir, output_dir,
                     # Lật ngang
                     if random.random() < 0.5:
                         flip_crop = cv2.flip(crop, 1)
-                        flip_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_num{jersey_number}_flip.jpg"
+                        flip_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_num{jersey_number}_vis{number_visible}_color{team_color}_flip.jpg"
                         flip_path = os.path.join(class_dir, flip_name)
                         cv2.imwrite(flip_path, flip_crop)
                         jersey_counts[class_name] += 1
@@ -236,7 +236,7 @@ def extract_player_crops(data_dir, frame_dir, output_dir,
                         center = (w // 2, h // 2)
                         M = cv2.getRotationMatrix2D(center, angle, 1.0)
                         rotated_crop = cv2.warpAffine(crop, M, (w, h))
-                        rot_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_num{jersey_number}_rot.jpg"
+                        rot_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_num{jersey_number}_vis{number_visible}_color{team_color}_rot.jpg"
                         rot_path = os.path.join(class_dir, rot_name)
                         cv2.imwrite(rot_path, rotated_crop)
                         jersey_counts[class_name] += 1
@@ -246,7 +246,7 @@ def extract_player_crops(data_dir, frame_dir, output_dir,
                     if random.random() < 0.3:
                         brightness = 0.5 + random.random() * 1.0  # 0.5 to 1.5
                         bright_crop = cv2.convertScaleAbs(crop, alpha=brightness, beta=0)
-                        bright_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_num{jersey_number}_bright.jpg"
+                        bright_name = f"{match_dir}_frame_{frame_id:06d}_x{x}_y{y}_num{jersey_number}_vis{number_visible}_color{team_color}_bright.jpg"
                         bright_path = os.path.join(class_dir, bright_name)
                         cv2.imwrite(bright_path, bright_crop)
                         jersey_counts[class_name] += 1
@@ -330,6 +330,10 @@ def extract_player_crops(data_dir, frame_dir, output_dir,
         for c in classes:
             f.write(f"{c}\n")
     
+    # Thêm: Lưu danh sách màu áo
+    with open(os.path.join(output_dir, 'colors.txt'), 'w') as f:
+        f.write("white\ndark\n")
+    
     # Đếm tổng số ảnh
     train_count = sum([len(os.listdir(os.path.join(train_dir, c))) for c in classes])
     val_count = sum([len(os.listdir(os.path.join(val_dir, c))) for c in classes])
@@ -352,6 +356,7 @@ def extract_player_crops(data_dir, frame_dir, output_dir,
     if len(classes) > 5:
         print("│   ├── ...")
     print("├── classes.txt")
+    print("├── colors.txt")
     print("└── class_distribution.png")
 
 def main():
