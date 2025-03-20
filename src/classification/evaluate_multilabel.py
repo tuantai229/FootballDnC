@@ -110,7 +110,7 @@ def evaluate_model(model_path, dataset_path, batch_size=32, workers=2, device=No
     
     # ======= TÍNH TOÁN METRICS =======
     # Tạo thư mục lưu kết quả
-    os.makedirs('evaluation_results/multilabel', exist_ok=True)
+    os.makedirs('models/multilabel/evaluation_results', exist_ok=True)
     
     # Accuracy cho số áo
     jersey_acc = accuracy_score(jersey_labels, jersey_predictions)
@@ -162,7 +162,7 @@ def evaluate_model(model_path, dataset_path, batch_size=32, workers=2, device=No
     plt.title('Confusion Matrix - Số áo')
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
-    plt.savefig('evaluation_results/multilabel/confusion_matrix_jersey.png')
+    plt.savefig('models/multilabel/evaluation_results/confusion_matrix_jersey.png')
     
     # Confusion matrix cho màu áo
     plt.figure(figsize=(8, 6))
@@ -173,7 +173,7 @@ def evaluate_model(model_path, dataset_path, batch_size=32, workers=2, device=No
     plt.title('Confusion Matrix - Màu áo')
     plt.ylabel('True Label')
     plt.xlabel('Predicted Label')
-    plt.savefig('evaluation_results/multilabel/confusion_matrix_color.png')
+    plt.savefig('models/multilabel/evaluation_results/confusion_matrix_color.png')
     
     # ======= HIỂN THỊ MỘT SỐ MẪU DỰ ĐOÁN =======
     visualize_predictions(val_dataset, model, device, num_samples=10)
@@ -241,8 +241,8 @@ def visualize_predictions(dataset, model, device, num_samples=10):
             axes[i].axis('off')
     
     plt.tight_layout()
-    plt.savefig('evaluation_results/multilabel/prediction_samples.png')
-    print("Đã lưu mẫu dự đoán tại 'evaluation_results/multilabel/prediction_samples.png'")
+    plt.savefig('models/multilabel/evaluation_results/prediction_samples.png')
+    print("Đã lưu mẫu dự đoán tại 'models/multilabel/evaluation_results/prediction_samples.png'")
 
 def main():
     parser = argparse.ArgumentParser(description='Đánh giá mô hình đa nhãn')
