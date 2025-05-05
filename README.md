@@ -11,6 +11,10 @@ A project to build an AI Pipeline for detecting and classifying player jersey nu
 - **Team color classification** (white/black)
 - **Video processing** to create annotated output videos
 
+
+https://github.com/user-attachments/assets/c7f7f6f4-843d-43d7-b619-cc798da1cf9a
+
+
 ![Example Result](docs/images/result-example.png)
 
 ## 📋 Project Structure
